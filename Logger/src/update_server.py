@@ -19,13 +19,16 @@ from twisted.internet.task import LoopingCall
 # configure the service logging
 # --------------------------------------------------------------------------- #
 import logging
-logging.basicConfig()
+logging.basicConfig(filename = '../error_log/error.log', filemode='a')
 log = logging.getLogger()
-log.setLevel(logging.DEBUG)
-
-# --------------------------------------------------------------------------- #
-# define your callback process
-# --------------------------------------------------------------------------- #
+log.setLevel(logging.ERROR)
+# set up logging to console 
+console = logging.StreamHandler()
+console.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+console.setFormatter(formatter)
+# add the handler to the root logger 
+logging.getLogger('').addHandler(console) 
 
 
 """
@@ -40,7 +43,7 @@ try:
         
 ##    print("Configuration file is not empty :)\n")
     modbus = config['server']
-    print(modbus)
+    #print(modbus)
     port =int( modbus['port'])
     print("Port: ",port)
     ip_address = modbus['ip_address']
@@ -60,17 +63,20 @@ try:
     mcp3208 = configLogger['mcp3208']
     BasicCONFIG = configLogger['basicconfig']
     
-        
-
 except Exception as e:
     print(e)
+    log.error(e)
 
-    
+
+
+# --------------------------------------------------------------------------- #
+# define your callback process
+# --------------------------------------------------------------------------- #    
 def updating_writer(a):
     try:
         log.debug("updating the context")
         context = a[0]
-        print(context)
+        #print(context)
 ##        context1 = a[0][1]
 ##        context2  = a[0][2]
 ##        context3 = a[0][3]
@@ -102,7 +108,7 @@ def updating_writer(a):
                 #print(i)
                 intData.append(int(i))
                 #print(intData)
-            print("here")
+            #print("here")
             ValuesMCP3208 = intData
             log.debug("MCP3208 values: " + str(ValuesMCP3208))
         with open('../data_log/mintai08_data.txt','r') as file:
@@ -119,24 +125,24 @@ def updating_writer(a):
 
         MCP3208ConfigData = []
         for keys in list(modbus.keys()):
-            print(keys)
+            #print(keys)
             if not(modbus[keys]):
                 modbus[keys] = '0'
-            print(modbus[keys]) 
+            #print(modbus[keys]) 
             MCP3208ConfigData.append(int(modbus[keys]))
         print("MCP3208ConfigData: " + str(MCP3208ConfigData) )
 
         
         MINTAI08ConfigData = []
         for keys2 in list(modbus.keys()):
-            print(keys2)
+            #print(keys2)
             if not(keys2):
                 modbus[keys2] = '0'
-            print(modbus[keys2])
+            #print(modbus[keys2])
             MINTAI08ConfigData.append(int(modbus[keys2]))
         print("MINTAI08ConfigData" + str(MINTAI08ConfigData))
 
-        print(ComprisonValuesList(MCP3208ConfigData,ValuesMCP3208Configstore))
+        #print(ComprisonValuesList(MCP3208ConfigData,ValuesMCP3208Configstore))
 
         context[slave_id].setValues(register, 30, MCP3208ConfigData)
         context[slave_id].setValues(register, StartAddress, ValuesMCP3208)
@@ -158,6 +164,8 @@ def updating_writer(a):
     except Exception as errUpdate:
         print(errUpdate)
         print("!!Error Updating the context\n")
+        log.error(errUpdate)
+        log.error("!!Error Updating the context")
 
 def ComprisonValuesList(PrevValue, CurrentValue):
     res = ((PrevValue > CurrentValue) -(PrevValue < CurrentValue))
@@ -174,13 +182,13 @@ def run_updating_server():
     # initialize your data store
     # ----------------------------------------------------------------------- # 
     
-    store = ModbusSlaveContext(hr=ModbusSequentialDataBlock(0, [0]*20))
-    store1 = ModbusSlaveContext(hr=ModbusSequentialDataBlock(20, [0]*16))
-    store2 = ModbusSlaveContext(hr=ModbusSequentialDataBlock(50, [0]*16))
-    store3 = ModbusSlaveContext(hr=ModbusSequentialDataBlock(70, [0]*4))
+    store = ModbusSlaveContext(hr=ModbusSequentialDataBlock(0, [0]*76))
+##    store1 = ModbusSlaveContext(hr=ModbusSequentialDataBlock(20, [0]*16))
+##    store2 = ModbusSlaveContext(hr=ModbusSequentialDataBlock(50, [0]*16))
+##    store3 = ModbusSlaveContext(hr=ModbusSequentialDataBlock(70, [0]*4))
 
-    SlaveDict = {0: store, 1: store1, 2: store2, 3: store3}
-    context = ModbusServerContext(slaves=SlaveDict, single=False)
+##    SlaveDict = {0: store, 1: store1, 2: store2, 3: store3}
+    context = ModbusServerContext(slaves=store, single=True)
 ##    context1 = ModbusServerContext(slaves=store1, single=True)
 ##    context2 = ModbusServerContext(slaves=store2, single=True)
 ##    context3 = ModbusServerContext(slaves=store3, single=True)
