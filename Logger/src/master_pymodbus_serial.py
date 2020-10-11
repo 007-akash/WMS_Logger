@@ -124,6 +124,10 @@ def ScanData():
         fileMCP.write(dataStringMCP3208)
     with open('../data_log/mintai08_data.txt', 'w') as fileMINT:
         fileMINT.write(dataStringMINTAI08)
+    with open('../data_log/oled_data.txt', 'w') as fileOLED:
+        fileOLED.write(dataStringMCP3208+','dataStringMINTAI08)
+
+        
     
     
 print("Run First Time")
