@@ -4,6 +4,7 @@ from luma.core.interface.serial import i2c
 import os.path
 from PIL import Image, ImageFont, ImageDraw
 import time
+from backports import configparser
 
 serial = i2c(port=1, address=0x3C)
 

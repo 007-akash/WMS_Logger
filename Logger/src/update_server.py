@@ -124,12 +124,13 @@ def updating_writer(a):
 
 
         MCP3208ConfigData = []
-        for keys in list(modbus.keys()):
+        for key in list(modbus.keys()):
             #print(keys)
-            if not(modbus[keys]):
-                modbus[keys] = '0'
-            #print(modbus[keys]) 
-            MCP3208ConfigData.append(int(modbus[keys]))
+            if not(modbus[key]):
+                modbus[key] = '0'
+            #print(modbus[key])
+            decimalplace = modbus[key][::-1].find('.')
+            MCP3208ConfigData.append(int(float(modbus[key]) * 10 * decimalplace))
         print("MCP3208ConfigData: " + str(MCP3208ConfigData) )
 
         
@@ -139,16 +140,40 @@ def updating_writer(a):
             if not(keys2):
                 modbus[keys2] = '0'
             #print(modbus[keys2])
-            MINTAI08ConfigData.append(int(modbus[keys2]))
+            decimalplace = modbus[keys2][::-1].find('.')
+            MINTAI08ConfigData.append(int(float(modbus[keys2]) * 10 * decimalplace))
         print("MINTAI08ConfigData" + str(MINTAI08ConfigData))
 
-        #print(ComprisonValuesList(MCP3208ConfigData,ValuesMCP3208Configstore))
-
-        context[slave_id].setValues(register, 30, MCP3208ConfigData)
+#-----------------------------------------------------------------------------#
+#  Configuration Check
+#-----------------------------------------------------------------------------#
+        comparisonConfigValueMCP3208 = ComprisonValuesList(MCP3208ConfigData,ValuesMCP3208Configstore)
+        print("Comparison Configuration Values MCP3208 : ", comparisonConfigValueMCP3208)
+#            
+        comparisonConfigValueMINTAI08 = ComprisonValuesList(MINTAI08ConfigData,ValuesMINTAI08Configstore)
+        print("Comparison Configuration Values MINTAI08 : ", comparisonConfigValueMINTAI08)
+#
+#
+        if(comparisonConfigValueMCP3208 == False):
+            print("Changing Configuration MCP3208")
+            setConfig('mcp3208', ValuesMCP3208Configstore)
+            context[slave_id].setValues(register, 30, ValuesMCP3208Configstore)
+        else:
+            context[slave_id].setValues(register, 30, MCP3208ConfigData)
+#    
         context[slave_id].setValues(register, StartAddress, ValuesMCP3208)
         context[slave_id].setValues(register, ChannelAvailable, ValuesMINTAI08)
-        context[slave_id].setValues(register, 50, MINTAI08ConfigData)
+#
+        if(comparisonConfigValueMINTAI08 == False):
+            print("Changing Configuration MINTAI08")
+            setConfig('modbus', ValuesMINTAI08Configstore)
+            context[slave_id].setValues(register, 50, ValuesMINTAI08Configstore)
+        else:
+            context[slave_id].setValues(register, 50, MINTAI08ConfigData)
+#----------------------------------------------------------------------------#
 
+
+            
         BasicConfigData = []
         record = 1 if BasicCONFIG['Disable_Record_save'] =='True' else 0
         upload = 1 if BasicCONFIG['Disable_Record_upload'] =='True' else 0
@@ -168,12 +193,25 @@ def updating_writer(a):
         log.error("!!Error Updating the context")
 
 def ComprisonValuesList(PrevValue, CurrentValue):
-    res = ((PrevValue > CurrentValue) -(PrevValue < CurrentValue))
-    if( res == 0):
-        return True
-    if( res == -1 ):
-        return False
-#def setConfig():
+    if(len(PrevValue) == len(CurrentValue)):
+        set1 = set(PrevValue)
+        set2 = set(CurrentValue)
+        if(set1 == set2):
+            return True
+        else:
+            return False
+        
+def setConfig(section, valueList):
+    i = 0
+    for keys,value in configLogger.items(section):
+        if(section == 'mcp3208'):
+            configLogger.set(section, keys, str(round(valueList[i]/100,2))
+        else:
+            configLogger.set(section, keys, str(valueList[i])                         
+                             
+        i = i + 1
+    with open('../config/LoggerConfig.ini', 'w') as configfile:
+        configLogger.write(configfile)
     
     
 
@@ -183,15 +221,7 @@ def run_updating_server():
     # ----------------------------------------------------------------------- # 
     
     store = ModbusSlaveContext(hr=ModbusSequentialDataBlock(0, [0]*76))
-##    store1 = ModbusSlaveContext(hr=ModbusSequentialDataBlock(20, [0]*16))
-##    store2 = ModbusSlaveContext(hr=ModbusSequentialDataBlock(50, [0]*16))
-##    store3 = ModbusSlaveContext(hr=ModbusSequentialDataBlock(70, [0]*4))
-
-##    SlaveDict = {0: store, 1: store1, 2: store2, 3: store3}
     context = ModbusServerContext(slaves=store, single=True)
-##    context1 = ModbusServerContext(slaves=store1, single=True)
-##    context2 = ModbusServerContext(slaves=store2, single=True)
-##    context3 = ModbusServerContext(slaves=store3, single=True)
     
     
     # ----------------------------------------------------------------------- # 
