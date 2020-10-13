@@ -205,9 +205,9 @@ def setConfig(section, valueList):
     i = 0
     for keys,value in configLogger.items(section):
         if(section == 'mcp3208'):
-            configLogger.set(section, keys, str(round(valueList[i]/100,2))
+            configLogger.set(section, keys, str(round(valueList[i]/100,2)))
         else:
-            configLogger.set(section, keys, str(valueList[i])                         
+            configLogger.set(section, keys, str(valueList[i]))                         
                              
         i = i + 1
     with open('../config/LoggerConfig.ini', 'w') as configfile:

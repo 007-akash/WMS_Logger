@@ -3,8 +3,8 @@ from luma.oled.device import sh1106
 from luma.core.interface.serial import i2c
 import os.path
 from PIL import Image, ImageFont, ImageDraw
-import time
 from backports import configparser
+import time
 
 serial = i2c(port=1, address=0x3C)
 
@@ -20,22 +20,52 @@ def main():
 def displayParameter(key,value):
     font=ImageFont.truetype(r'../fonts/OpenSans-Regular.ttf',15)
     with canvas(device) as draw:
-        draw.rectangle(device.bounding_box, outline="white", fill="black")
-        draw.text((10, 0), key, fill="white",font=font,align="center")
-        draw.text((30, 0), value, fill="white",font=font,align="center")
+        draw.rectangle([(1,15),(127,62)], outline="black", fill="white")
+        w, h = draw.textsize(key)
+        draw.text(((128-w)/2, 25), key, fill="black",font=font)
+        w, h = draw.textsize(value)
+        draw.text(((128-w)/2, 42), value, fill="black",font=font)
 
+def displayIcons():
+    with canvas(device) as draw:
+        draw.polygon([(85,2), (81, 6), (85,6)], fill = "black")
+        draw.polygon([(107,2),(115,2),(117,3),(117,5),(115,6),(107, 6)], fill = "black")
+
+def updateTime():
+    curTime = time.localtime()
+    time_string = time.strftime("%m/%d/%Y, %H:%M", curTime)
+    fontHeader = ImageFont.truetype(r'../fonts/OpenSans-Regular.ttf',7)
+    draw.text((5, 2), time_string, fill="black",font=fontHeader)                  
+    
 def model_info():
-    config_info = configparser.ConfigParser()
+    configinfo = configparser.ConfigParser()
     configinfo.read('../config/model.ini')
     info = configinfo['model_info']
     info_productName = info['product_name']
     info_modelNo = info['mdoel_no']
-    return info_productName,info_modelNo
+    updateRate = info['updateRate']
+    return updateRate,info_productName,info_modelNo
+
+def writeScreen():
+    with open('../data_log/oled_data.txt','r') as parameter:
+        dataParameter = parameter.read()
+        dataParameter = dataParameter.split(',')
+    index = 0
+    lengthParameter = len(dataParameter)
+    if(lengthParameter<11):
+        for x in range(lengthParameter,11):
+            dataParameter.append('NA')
+    for key in listParameter:
+        displayParameter(key,dataParameter[index])
+        time.sleep(1)
+        index = index + 1
+        #device.clear()
 
 if __name__ == "__main__":
     try:
         device = sh1106(serial,width=128,height=64,rotate=2)
-        print(device.width)
+        #print(device.width)
+        device.clear()
         main()
         time.sleep(2)
         device.clear()
@@ -54,20 +84,31 @@ if __name__ == "__main__":
              'M.T3(Celsius)',
              'M.T4(Celsius)',
              'M.T5(Celsius)']
-        with open('../data_log/oled_data.txt','r') as parameter:
-            dataParameter = parameter.read()
-            dataParameter = dataParameter.split(',')
-        index = 0
-            
-        for key in listParameter:
-            displayParameter(key,dataParameter[index])
-            time.sleep(1)
-            index = index + 1
-            device.clear()
+
+        updateRate = int(info[3])
         
+        #One Time Run
+        displayIcons()
+        updateTime()
+        lastUpdatedClock = time.time()
+        writeScreen()
+        lastUpdatedTime = time.time()
         
+        #Entered in Loop
+        while True:
+            if((time.time() - lastUpdatedTime)>updateRate):
+                writeScreen()
+                lastUpdatedTime = time.time()
+            if((time.time() - lastUpdatedClock)>60):
+                updateTime()
+                lastUpdatedClock = time.time()
+
     except KeyboardInterrupt:
         pass
+
+
+
+
 
 
 

@@ -83,10 +83,10 @@ def ReadMINTAI08():
         if(client.connect()):
             x = client.read_holding_registers(0,5,unit = 1)
             MT1 = ((x.getRegister(0) - int(modbus['offset9'])) * int(modbus['scale9'])) 
-            MT2 = ((x.getRegister(1) - int(modbus['offset10'])) * int(modbus['scale10']) 
-            MT3 = ((x.getRegister(2) - int(modbus['offset11'])) * int(modbus['scale11']) 
-            MT4 = ((x.getRegister(3) - int(modbus['offset12'])) * int(modbus['scale12']) 
-            MT5 = ((x.getRegister(4) - int(modbus['offset13'])) * int(modbus['scale13']) 
+            MT2 = ((x.getRegister(1) - int(modbus['offset10'])) * int(modbus['scale10'])) 
+            MT3 = ((x.getRegister(2) - int(modbus['offset11'])) * int(modbus['scale11']))
+            MT4 = ((x.getRegister(3) - int(modbus['offset12'])) * int(modbus['scale12'])) 
+            MT5 = ((x.getRegister(4) - int(modbus['offset13'])) * int(modbus['scale13'])) 
             dataString = str(MT1) + ',' + str(MT2) + ',' + str(MT3) + ',' + str(MT4) + ',' + str(MT5)
             print("MINTAI08 Data : " + dataString + '\n' )
         return dataString
@@ -135,7 +135,7 @@ def ScanData():
     with open('../data_log/mintai08_data.txt', 'w') as fileMINT:
         fileMINT.write(dataStringMINTAI08)
     with open('../data_log/oled_data.txt', 'w') as fileOLED:
-        fileOLED.write(dataStringMCP3208Actual+','dataStringMINTAI08)
+        fileOLED.write(dataStringMCP3208Actual+','+dataStringMINTAI08)
 
         
     
