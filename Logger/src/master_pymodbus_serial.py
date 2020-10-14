@@ -45,19 +45,19 @@ def ReadMCP3208():
     try:
         print("\nReading MCP3208......\n")
         dataString = ''
-        channel = []
+        Channel = []
         value = []
         returnFloatVal = ''
-        for count in range(0,channel_available):
+        for count in range(0,channel_available - 1):
             #print("Count Channel: ",count)
             Scale = 'scale' + str(count + 1)
             Offset = 'offset' + str(count + 1)
             try:
-                channel.append(MCP3208(channel = count, clock_pin = ClockPin, mosi_pin = MosiPin, select_pin = SelectPin))
+                Channel.append(MCP3208(channel = count, clock_pin = ClockPin, mosi_pin = MosiPin, select_pin = SelectPin))
                 #print(Scale)
                 #print(mcp3208[Scale])
-                #print(channel[count].value)
-                FloatValue = round(float(((channel[count].value) - float(mcp3208[Offset])) * float(mcp3208[Scale])),2)
+                #print(Channel[count].value)
+                FloatValue = round(float(((Channel[count].value * (mcp3208['CalibrationFactor'])) - float(mcp3208[Offset])) * float(mcp3208[Scale])),2)
             except Exception as gpioErr:
                 print(gpioErr)
                 FloatValue = 0.00

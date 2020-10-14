@@ -97,6 +97,8 @@ def updating_writer(a):
         print("Modbus Stored ConfigValuesMCP3208: ",ValuesMCP3208Configstore)
         ValuesMINTAI08Configstore = context[slave_id].getValues(register, 50 , count = 16)
         print("Modbus Stored ConfigValuesMINTAI08: ",ValuesMINTAI08Configstore)
+        BasicConfigStore = context[slave_id].getValues(register, 70 , count = 4)
+        print("Modbus Stored BasicConfigValues: ",BasicConfigStore)
 ##        
         with open('../data_log/mcp3208_data.txt','r') as file:
             data = file.readline()
@@ -144,6 +146,15 @@ def updating_writer(a):
             MINTAI08ConfigData.append(int(float(modbus[keys2]) * 10 * decimalplace))
         print("MINTAI08ConfigData" + str(MINTAI08ConfigData))
 
+        BasicConfigData = []
+        record = 1 if BasicCONFIG['Disable_Record_save'] =='True' else 0
+        upload = 1 if BasicCONFIG['Disable_Record_upload'] =='True' else 0
+        BasicConfigData.append(record)
+        BasicConfigData.append(upload)
+        BasicConfigData.append(int(BasicCONFIG['Data_Record_Interval']))
+        BasicConfigData.append(int(BasicCONFIG['Data_Scan_Interval']))
+        print("BasicConfigData" + str(BasicConfigData))
+
 #-----------------------------------------------------------------------------#
 #  Configuration Check
 #-----------------------------------------------------------------------------#
@@ -170,20 +181,17 @@ def updating_writer(a):
             context[slave_id].setValues(register, 50, ValuesMINTAI08Configstore)
         else:
             context[slave_id].setValues(register, 50, MINTAI08ConfigData)
+
+        ComparisonBasicConfig = ComprisonValuesList(BasicConfigData, BasicConfigStore)
+        if(ComparisonBasicConfig == False):
+            print("Changing Basic Configuration Data")
+            BasicConfigStore[0] = 'True' if BasicConfigStore[0] == 1 else 'False'
+            BasicConfigStore[1] = 'True' if BasicConfigStore[1] == 1 else 'False'
+            setConfig('basicconfig', BasicConfigStore)
+            context[slave_id].setValues(register, 70, BasicConfigStore)
+        else:
+            context[slave_id].setValues(register, 70, BasicConfigData)
 #----------------------------------------------------------------------------#
-
-
-            
-        BasicConfigData = []
-        record = 1 if BasicCONFIG['Disable_Record_save'] =='True' else 0
-        upload = 1 if BasicCONFIG['Disable_Record_upload'] =='True' else 0
-        BasicConfigData.append(record)
-        BasicConfigData.append(upload)
-        BasicConfigData.append(int(BasicCONFIG['Data_Record_Interval']))
-        BasicConfigData.append(int(BasicCONFIG['Data_Scan_Interval']))
-        
-        print("BasicConfigData" + str(BasicConfigData))
-        context[slave_id].setValues(register, 70, BasicConfigData)
         print("************End of Transaction***************")
             
     except Exception as errUpdate:
