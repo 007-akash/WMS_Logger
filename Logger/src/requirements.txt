@@ -1,0 +1,6 @@
+pymodbus==2.3.0
+Twisted==20.3.0
+backports.statistics==0.1.0
+gpiozero==1.5.1
+luma==2.0.6
+Pillow==7.2.0
