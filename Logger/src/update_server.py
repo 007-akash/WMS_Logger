@@ -93,7 +93,7 @@ def updating_writer(a):
         print("Modbus Stored vaueMCP3208: ",ValuesMCP3208store)
         ValuesMINTAI08store = context[slave_id].getValues(register, ChannelAvailable , count = MTAvailable)
         print("Modbus stored valueValuesMINTAI08: ",ValuesMINTAI08store)
-        ValuesMCP3208Configstore = context[slave_id].getValues(register, 30 , count = 16)
+        ValuesMCP3208Configstore = context[slave_id].getValues(register, 30 , count = 17)
         print("Modbus Stored ConfigValuesMCP3208: ",ValuesMCP3208Configstore)
         ValuesMINTAI08Configstore = context[slave_id].getValues(register, 50 , count = 16)
         print("Modbus Stored ConfigValuesMINTAI08: ",ValuesMINTAI08Configstore)
@@ -126,13 +126,14 @@ def updating_writer(a):
 
 
         MCP3208ConfigData = []
-        for key in list(modbus.keys()):
-            #print(keys)
-            if not(modbus[key]):
-                modbus[key] = '0'
-            #print(modbus[key])
-            decimalplace = modbus[key][::-1].find('.')
-            MCP3208ConfigData.append(int(float(modbus[key]) * 10 * decimalplace))
+        for key1 in list(mcp3208.keys()):
+            #print(key1)
+            
+            if not(mcp3208[key1]):
+                mcp3208[key1] = '0'
+            #print(mcp3208[key1])
+            decimalplace = mcp3208[key1][::-1].find('.')
+            MCP3208ConfigData.append(int(float(mcp3208[key1]) * 100))
         print("MCP3208ConfigData: " + str(MCP3208ConfigData) )
 
         
@@ -143,7 +144,7 @@ def updating_writer(a):
                 modbus[keys2] = '0'
             #print(modbus[keys2])
             decimalplace = modbus[keys2][::-1].find('.')
-            MINTAI08ConfigData.append(int(float(modbus[keys2]) * 10 * decimalplace))
+            MINTAI08ConfigData.append(int(float(modbus[keys2]) * 100))
         print("MINTAI08ConfigData" + str(MINTAI08ConfigData))
 
         BasicConfigData = []
@@ -185,10 +186,11 @@ def updating_writer(a):
         ComparisonBasicConfig = ComprisonValuesList(BasicConfigData, BasicConfigStore)
         if(ComparisonBasicConfig == False):
             print("Changing Basic Configuration Data")
+            context[slave_id].setValues(register, 70, BasicConfigStore)
             BasicConfigStore[0] = 'True' if BasicConfigStore[0] == 1 else 'False'
             BasicConfigStore[1] = 'True' if BasicConfigStore[1] == 1 else 'False'
             setConfig('basicconfig', BasicConfigStore)
-            context[slave_id].setValues(register, 70, BasicConfigStore)
+            
         else:
             context[slave_id].setValues(register, 70, BasicConfigData)
 #----------------------------------------------------------------------------#
@@ -220,15 +222,55 @@ def setConfig(section, valueList):
         i = i + 1
     with open('../config/LoggerConfig.ini', 'w') as configfile:
         configLogger.write(configfile)
+
+def CheckInitialValues():
+    ValueList = []
+    MCP3208ConfigData = []
+    for key1 in list(mcp3208.keys()):
+        print(key1)
+        
+        if not(mcp3208[key1]):
+            mcp3208[key1] = '0'
+        print(mcp3208[key1])
+        decimalplace = mcp3208[key1][::-1].find('.')
+        MCP3208ConfigData.append(int(float(mcp3208[key1]) * 100))
+    print("MCP3208ConfigData: " + str(MCP3208ConfigData))
+    ValueList = ValueList + MCP3208ConfigData + [0,0,0]
+    #ValueList.append[]
+
     
+    MINTAI08ConfigData = []
+    for keys2 in list(modbus.keys()):
+        #print(keys2)
+        if not(keys2):
+            modbus[keys2] = '0'
+        #print(modbus[keys2])
+        decimalplace = modbus[keys2][::-1].find('.')
+        MINTAI08ConfigData.append(int(float(modbus[keys2]) * 100))
+    print("MINTAI08ConfigData" + str(MINTAI08ConfigData))
+    ValueList = ValueList + MINTAI08ConfigData + [0,0,0,0]
+
+    BasicConfigData = []
+    record = 1 if BasicCONFIG['Disable_Record_save'] =='True' else 0
+    upload = 1 if BasicCONFIG['Disable_Record_upload'] =='True' else 0
+    BasicConfigData.append(record)
+    BasicConfigData.append(upload)
+    BasicConfigData.append(int(BasicCONFIG['Data_Record_Interval']))
+    BasicConfigData.append(int(BasicCONFIG['Data_Scan_Interval']))
+    print("BasicConfigData" + str(BasicConfigData))
+    ValueList = ValueList + BasicConfigData
+    print(ValueList)
+    return ValueList
     
 
 def run_updating_server():
     # ----------------------------------------------------------------------- # 
     # initialize your data store
-    # ----------------------------------------------------------------------- # 
+    # ----------------------------------------------------------------------- #
+    InitialValueList = [0]*29 + CheckInitialValues()
+     
     
-    store = ModbusSlaveContext(hr=ModbusSequentialDataBlock(0, [0]*76))
+    store = ModbusSlaveContext(hr=ModbusSequentialDataBlock(0, InitialValueList))
     context = ModbusServerContext(slaves=store, single=True)
     
     
@@ -249,7 +291,7 @@ def run_updating_server():
     time = scan_interval   # 5 seconds delay
     loop = LoopingCall(f=updating_writer, a=(context,))
     loop.start(time, now=False) # initially delay by time
-    StartTcpServer(context, identity=identity, address=("localhost", port))
+    StartTcpServer(context, identity=identity, address=(ip_address, port))
 
 
 if __name__ == "__main__":

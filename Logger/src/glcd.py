@@ -18,24 +18,27 @@ def main():
     device.display(background.convert(device.mode))
 
 def displayParameter(key,value):
-    font=ImageFont.truetype(r'../fonts/OpenSans-Regular.ttf',15)
+    font=ImageFont.truetype(r'../fonts/calibri.ttf',15)
     with canvas(device) as draw:
         draw.rectangle([(1,15),(127,62)], outline="black", fill="white")
         w, h = draw.textsize(key)
         draw.text(((128-w)/2, 25), key, fill="black",font=font)
         w, h = draw.textsize(value)
         draw.text(((128-w)/2, 42), value, fill="black",font=font)
+        draw.polygon([(85,4), (79, 11), (85,11)], fill = "white")
+        draw.polygon([(107,4),(115,4),(118,6),(118,9),(115,11),(107, 11)], fill = "white")
+        curTime = time.localtime()
+        time_string = time.strftime("%H : %M", curTime)
+        fontHeader = ImageFont.truetype(r'../fonts/calibri.ttf',10)
+        draw.text((5, 4), time_string, fill="white",font=fontHeader) 
 
-def displayIcons():
-    with canvas(device) as draw:
-        draw.polygon([(85,2), (81, 6), (85,6)], fill = "black")
-        draw.polygon([(107,2),(115,2),(117,3),(117,5),(115,6),(107, 6)], fill = "black")
+##def displayIcons():
+##    with canvas(device) as draw:
 
-def updateTime():
-    curTime = time.localtime()
-    time_string = time.strftime("%m/%d/%Y, %H:%M", curTime)
-    fontHeader = ImageFont.truetype(r'../fonts/OpenSans-Regular.ttf',7)
-    draw.text((5, 2), time_string, fill="black",font=fontHeader)                  
+
+##def updateTime():
+##    with canvas(device) as draw:
+                 
     
 def model_info():
     configinfo = configparser.ConfigParser()
@@ -44,7 +47,7 @@ def model_info():
     info_productName = info['product_name']
     info_modelNo = info['mdoel_no']
     updateRate = info['updateRate']
-    return updateRate,info_productName,info_modelNo
+    return info_productName,info_modelNo,updateRate
 
 def writeScreen():
     with open('../data_log/oled_data.txt','r') as parameter:
@@ -84,12 +87,14 @@ if __name__ == "__main__":
              'M.T3(Celsius)',
              'M.T4(Celsius)',
              'M.T5(Celsius)']
+        print(info[2])
 
-        updateRate = int(info[3])
+        updateRate = int(info[2])
         
         #One Time Run
-        displayIcons()
-        updateTime()
+##        displayIcons()
+##        time.sleep(2)
+##        updateTime()
         lastUpdatedClock = time.time()
         writeScreen()
         lastUpdatedTime = time.time()
@@ -99,9 +104,9 @@ if __name__ == "__main__":
             if((time.time() - lastUpdatedTime)>updateRate):
                 writeScreen()
                 lastUpdatedTime = time.time()
-            if((time.time() - lastUpdatedClock)>60):
-                updateTime()
-                lastUpdatedClock = time.time()
+##            if((time.time() - lastUpdatedClock)>60):
+##                updateTime()
+##                lastUpdatedClock = time.time()
 
     except KeyboardInterrupt:
         pass
